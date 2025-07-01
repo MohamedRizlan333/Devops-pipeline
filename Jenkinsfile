@@ -2,9 +2,7 @@ pipeline {
     agent any
 
     environment {
-        IMAGE_NAME = 'mohamedrizlan
-
-/clean-devops'
+        IMAGE_NAME = 'mohamedrizlan/devops-webapp'
 
         CREDS_ID = 'dockerhub-creds'
     }
