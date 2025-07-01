@@ -1,6 +1,5 @@
 FROM python:3.9-slim
 WORKDIR /app
-COPY app/requirements.txt .
+COPY app/requirements.txt .      
 RUN pip install -r requirements.txt
-COPY . .
-CMD ["python", "app.py"]
+COPY app/. .                    # copy all files inside app/ 
