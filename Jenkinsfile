@@ -2,29 +2,31 @@ pipeline {
     agent any
 
     environment {
-        IMAGE_NAME = 'mohamedrizlan/devops-project'
+        IMAGE_NAME = "mohamedrizlan/devops-project"
+        DOCKERFILE_PATH = "app/Dockerfile"
+        KUBECONFIG_CREDENTIALS = 'kubeconfig-credentials-id'  // Replace with your Jenkins credentials ID for kubeconfig
     }
 
     stages {
-        stage('Clone Repo') {
+        stage('Checkout') {
             steps {
-                git branch: 'main', url: 'https://github.com/MohamedRizlan333/Devops-pipeline.git'
+                checkout scm
             }
         }
 
         stage('Build Docker Image') {
-    steps {
-        bat 'cd app && docker build -t %IMAGE_NAME% .'
-    }
-}
-
+            steps {
+                bat """
+                docker build -t %IMAGE_NAME% -f %DOCKERFILE_PATH% .
+                """
+            }
         }
 
-        stage('Login & Push Docker Image') {
+        stage('Docker Login & Push') {
             steps {
-                withCredentials([usernamePassword(credentialsId: 'dockerhub-creds', usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
+                withCredentials([usernamePassword(credentialsId: 'dockerhub-creds', usernameVariable: 'DOCKERHUB_USERNAME', passwordVariable: 'DOCKERHUB_PASSWORD')]) {
                     bat """
-                    echo %DOCKER_PASS% | docker login -u %DOCKER_USER% --password-stdin
+                    docker login -u %DOCKERHUB_USERNAME% -p %DOCKERHUB_PASSWORD%
                     docker push %IMAGE_NAME%
                     """
                 }
@@ -33,8 +35,21 @@ pipeline {
 
         stage('Deploy to Kubernetes') {
             steps {
-                bat 'kubectl apply -f k8s'
+                // Use kubeconfig from Jenkins credentials
+                withCredentials([file(credentialsId: KUBECONFIG_CREDENTIALS, variable: 'KUBECONFIG_FILE')]) {
+                    // Set environment variable KUBECONFIG to point to this file
+                    bat """
+                    set KUBECONFIG=%KUBECONFIG_FILE%
+                    kubectl apply -f k8s/deployment.yaml
+                    """
+                }
             }
         }
     }
 
+    post {
+        always {
+            bat 'docker rmi %IMAGE_NAME%'
+        }
+    }
+}
