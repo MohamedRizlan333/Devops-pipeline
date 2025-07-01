@@ -4,7 +4,7 @@ pipeline {
     environment {
         IMAGE_NAME = 'mohamedrizlan
 
-/myapp'
+/clean-devops'
 
         CREDS_ID = 'dockerhub-creds'
     }
