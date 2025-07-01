@@ -13,10 +13,11 @@ pipeline {
         }
 
         stage('Build Docker Image') {
-            steps {
-                bat "docker build -t %IMAGE_NAME% -f app/Dockerfile ."
+    steps {
+        bat 'cd app && docker build -t %IMAGE_NAME% .'
+    }
+}
 
-            }
         }
 
         stage('Login & Push Docker Image') {
