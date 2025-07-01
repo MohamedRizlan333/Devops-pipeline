@@ -7,12 +7,11 @@ pipeline {
         CREDS_ID = 'dockerhub-creds'
     }
 
-    stages {
-        stage('Clone Repo') {
-            steps {
-                git 'https://github.com/MohamedRizlan333/Devops-pipeline.git'
-            }
-        }
+    stage('Clone Repo') {
+    steps {
+        git branch: 'main', url: 'https://github.com/MohamedRizlan333/Devops-pipeline.git'
+    }
+}
 
         stage('Build Docker Image') {
             steps {
