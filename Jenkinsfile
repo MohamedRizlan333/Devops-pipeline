@@ -3,8 +3,8 @@ pipeline {
 
     environment {
         IMAGE_NAME = 'mohamedrizlan/devops-project'
-        DOCKERHUB_CREDENTIALS = 'dockerhub-creds'  // Your Jenkins Docker Hub credentials ID
-        KUBECONFIG_CREDENTIALS = 'kubeconfig-creds' // Jenkins credential ID storing your kubeconfig file (if used)
+        DOCKERHUB_CREDENTIALS = 'dockerhub-creds'
+        KUBECONFIG_CREDENTIALS = 'kubeconfig-creds'
     }
 
     stages {
@@ -14,44 +14,36 @@ pipeline {
             }
         }
 
-        stage('Docker Build') {
+        stage('Build Docker Image') {
             steps {
-                script {
-                    // Build Docker image using Dockerfile inside app folder
-                    sh 'docker build -t $IMAGE_NAME -f app/Dockerfile app/'
-                }
+                bat 'docker build -t %IMAGE_NAME% -f app/Dockerfile app\\'
             }
         }
 
-        stage('Docker Login') {
+        stage('Login to Docker Hub') {
             steps {
                 script {
                     docker.withRegistry('https://registry.hub.docker.com', DOCKERHUB_CREDENTIALS) {
-                        echo "Logged into Docker Hub"
+                        echo "Docker Hub login successful"
                     }
                 }
             }
         }
 
-        stage('Docker Push') {
+        stage('Push Docker Image') {
             steps {
-                script {
-                    sh "docker push $IMAGE_NAME"
-                }
+                bat 'docker push %IMAGE_NAME%'
             }
         }
 
         stage('Deploy to Kubernetes') {
             steps {
-                withCredentials([file(credentialsId: KUBECONFIG_CREDENTIALS, variable: 'KUBECONFIG_FILE')]) {
-                    script {
-                        // Set KUBECONFIG env var so kubectl uses this config
-                        env.KUBECONFIG = KUBECONFIG_FILE
-
-                        // Apply deployment and service YAMLs (update path if different)
-                        sh 'kubectl apply -f k8s/deployment.yaml'
-                        sh 'kubectl apply -f k8s/service.yaml'
-                    }
+                withCredentials([file(credentialsId: KUBECONFIG_CREDENTIALS, variable: 'KUBECONFIG')]) {
+                    bat """
+                        set KUBECONFIG=%KUBECONFIG%
+                        kubectl apply -f k8s\\deployment.yaml
+                        kubectl apply -f k8s\\service.yaml
+                    """
                 }
             }
         }
