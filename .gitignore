@@ -1,0 +1,8 @@
+.terraform/
+*.tfstate
+*.tfstate.backup
+*.log
+*.exe
+*.log
+*.zip
+*.tar.gz
