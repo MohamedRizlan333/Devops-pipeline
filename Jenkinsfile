@@ -16,7 +16,7 @@ pipeline {
 
         stage('Build Docker Image') {
             steps {
-                bat 'docker build -t mohamedrizlan/devops-project -f app/Dockerfile app/'
+                sh 'docker build -t mohamedrizlan/devops-project -f app/Dockerfile app/'
 
             }
         }
