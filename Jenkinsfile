@@ -2,46 +2,56 @@ pipeline {
     agent any
 
     environment {
-        IMAGE_NAME = "mohamedrizlan/devops-project"
-        DOCKERFILE_PATH = "app/Dockerfile"
-        KUBECONFIG_CREDENTIALS = 'kubeconfig-credentials-id'  // Replace with your Jenkins credentials ID for kubeconfig
+        IMAGE_NAME = 'mohamedrizlan/devops-project'
+        DOCKERHUB_CREDENTIALS = 'dockerhub-creds'  // Your Jenkins Docker Hub credentials ID
+        KUBECONFIG_CREDENTIALS = 'kubeconfig-creds' // Jenkins credential ID storing your kubeconfig file (if used)
     }
 
     stages {
         stage('Checkout') {
             steps {
-                checkout scm
+                git url: 'https://github.com/MohamedRizlan333/Devops-pipeline.git', branch: 'main'
             }
         }
 
-        stage('Build Docker Image') {
+        stage('Docker Build') {
             steps {
-                bat """
-                docker build -t %IMAGE_NAME% -f %DOCKERFILE_PATH% .
-                """
+                script {
+                    // Build Docker image using Dockerfile inside app folder
+                    sh 'docker build -t $IMAGE_NAME -f app/Dockerfile app/'
+                }
             }
         }
 
-        stage('Docker Login & Push') {
+        stage('Docker Login') {
             steps {
-                withCredentials([usernamePassword(credentialsId: 'dockerhub-creds', usernameVariable: 'DOCKERHUB_USERNAME', passwordVariable: 'DOCKERHUB_PASSWORD')]) {
-                    bat """
-                    docker login -u %DOCKERHUB_USERNAME% -p %DOCKERHUB_PASSWORD%
-                    docker push %IMAGE_NAME%
-                    """
+                script {
+                    docker.withRegistry('https://registry.hub.docker.com', DOCKERHUB_CREDENTIALS) {
+                        echo "Logged into Docker Hub"
+                    }
+                }
+            }
+        }
+
+        stage('Docker Push') {
+            steps {
+                script {
+                    sh "docker push $IMAGE_NAME"
                 }
             }
         }
 
         stage('Deploy to Kubernetes') {
             steps {
-                // Use kubeconfig from Jenkins credentials
                 withCredentials([file(credentialsId: KUBECONFIG_CREDENTIALS, variable: 'KUBECONFIG_FILE')]) {
-                    // Set environment variable KUBECONFIG to point to this file
-                    bat """
-                    set KUBECONFIG=%KUBECONFIG_FILE%
-                    kubectl apply -f k8s/deployment.yaml
-                    """
+                    script {
+                        // Set KUBECONFIG env var so kubectl uses this config
+                        env.KUBECONFIG = KUBECONFIG_FILE
+
+                        // Apply deployment and service YAMLs (update path if different)
+                        sh 'kubectl apply -f k8s/deployment.yaml'
+                        sh 'kubectl apply -f k8s/service.yaml'
+                    }
                 }
             }
         }
@@ -49,7 +59,7 @@ pipeline {
 
     post {
         always {
-            bat 'docker rmi %IMAGE_NAME%'
+            cleanWs()
         }
     }
 }
