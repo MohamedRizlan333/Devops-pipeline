@@ -16,7 +16,8 @@ pipeline {
 
         stage('Build Docker Image') {
             steps {
-                bat 'docker build -t %IMAGE_NAME% -f app/Dockerfile app\\'
+                bat 'docker build -t mohamedrizlan/devops-project -f app/Dockerfile app/'
+
             }
         }
 
